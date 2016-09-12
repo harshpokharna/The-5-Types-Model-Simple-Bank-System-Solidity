@@ -1,0 +1,30 @@
+contract Bank{
+    
+    address public creator;
+    mapping (address => uint) balances;
+    
+    function Bank()
+    {
+        creator = msg.sender;
+    }
+    
+    function deposit()
+    {
+        balances[msg.sender] = balances[msg.sender] + msg.value;
+    }
+    
+    function withdraw(uint amount)
+    {
+        if(balances[msg.sender] < amount)
+        {
+            throw;
+        }
+        
+        balances[msg.sender] = balances[msg.sender] - amount;
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+    }
+}

@@ -1,0 +1,6 @@
+Here we start by putting all the logic in one smart contract. 
+
+This has many limitations:
+1. It is not very scalable - When there are more users, they will demad for more features. You can put them in other contracts but then everything will be very disconnected.
+2. The functions have no return values, so a contract that calls the bank can’t really know if it's call succeeded or not.
+3. Users have to call the bank contract directly because it checks the caller address in both the deposit and withdraw functions, which means we can’t really use a proxy account.
