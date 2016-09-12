@@ -1,0 +1,92 @@
+contract Bank{
+    
+    address public creator;
+    mapping (address => uint) balances;
+    
+    function Bank()
+    {
+        creator = msg.sender;
+    }
+    
+    function deposit(address customer) returns (bool isDepositSuccessful)
+    {
+        balances[customer] = balances[customer] + msg.value;
+        return true;
+    }
+    
+    function withdraw(address customer, uint amount) returns (bool isWithdrawalSuccessful)
+    {
+        if(balances[customer] < amount)
+        {
+            throw;
+        }
+        
+        balances[customer] = balances[customer] - amount;
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+        
+        return true;
+    }
+}
+
+contract FundManager{
+    
+    address owner;
+    address bank;
+    
+    function FundManager(){
+        
+        owner = msg.sender;
+        bank = new Bank();
+    }
+    
+    function depositMoney() returns (bool response)
+    {
+        if(msg.value == 0)
+        {
+            throw;
+        }
+        
+        if(bank == 0x0)
+        {
+            throw;
+        }
+        
+        bool isDepositSuccessful = Bank(bank).deposit.value(msg.value)(msg.sender);
+        
+        if(!isDepositSuccessful)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    function withdrawMoney(uint amount) returns (bool response){
+        
+        if(msg.value == 0)
+        {
+            throw;
+        }
+        
+        if(bank == 0x0)
+        {
+            throw;
+        }
+        
+        bool isWithdrawalSuccessful = Bank(bank).withdraw(msg.sender, amount);
+        
+        if(!isWithdrawalSuccessful){
+            throw;
+        }else{
+            if(!msg.sender.send(amount)){
+                throw;
+            }
+            
+            return true;
+        }
+    }
+}

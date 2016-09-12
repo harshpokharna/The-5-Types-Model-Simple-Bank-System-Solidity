@@ -1,0 +1,3 @@
+Here, we create a fund manager to keep separation of concerns. It also adds up an additional security layer over the bank contract. The bank contract now returns a boolean so that the calling contract may know ofthe status.
+
+But, anyone can still call the bank contract. We need to restrict it to the fund manager. Also, what if we ever think of updating the bank contract?
