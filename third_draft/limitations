@@ -1,0 +1,1 @@
+So, we added a setBank() function to the FundManager, which only the owner can call. But still we may want some better permissioning model and also we have to protect our bank contract's function from being called by outside actors.
