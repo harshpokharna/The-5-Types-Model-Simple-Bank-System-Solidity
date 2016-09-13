@@ -1,0 +1,176 @@
+contract Bank{
+    
+    address public owner;
+    mapping (address => uint) balances;
+    
+    // Set the owner when bank is created
+    function Bank()
+    {
+        owner = msg.sender;
+    }
+    
+    // Only the owner i.e. FundManager can call this
+    function deposit(address customer) returns (bool isDepositSuccessful)
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+        
+        balances[customer] = balances[customer] + msg.value;
+        return true;
+    }
+    
+    // Only the owner i.e. FundManager can call this
+    function setOwner(address newOwner) returns (bool response)
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+        
+        owner = newOwner;
+        return true;
+    }
+    
+    // Only the owner i.e. FundManager can call this
+    function withdraw(address customer, uint amount) returns (bool isWithdrawalSuccessful)
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+        
+        if(balances[customer] < amount)
+        {
+            throw;
+        }
+        
+        balances[customer] = balances[customer] - amount;
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+        
+        return true;
+    }
+}
+
+contract FundManager{
+    
+    address owner;
+    address bank;
+    
+    mapping (address => uint8) permissions;
+    
+    // Set an owner and a bank(with it's owner as FundManager)
+    function FundManager(){
+        
+        owner = msg.sender;
+        bank = new Bank();
+        
+        Bank(bank).setOwner(address(this));
+    }
+    
+    // Only a user with permissionLevel 1 can call the function
+    function depositMoney() returns (bool response)
+    {
+        if(msg.value == 0)
+        {
+            throw;
+        }
+        
+        if(bank == 0x0)
+        {
+            throw;
+        }
+        
+        if(permissions[msg.sender] != 1)
+        {
+            throw;
+        }
+        
+        bool isDepositSuccessful = Bank(bank).deposit.value(msg.value)(msg.sender);
+        
+        if(!isDepositSuccessful)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    // Only a user with permissionLevel 1 can call the function
+    function withdrawMoney(uint amount) returns (bool response){
+        
+        if(permissions[msg.sender] != 1)
+        {
+            throw;
+        }
+        
+        if(msg.value == 0)
+        {
+            throw;
+        }
+        
+        if(bank == 0x0)
+        {
+            throw;
+        }
+        
+        if(amount == 0)
+        {
+            throw;
+        }
+        
+        bool isWithdrawalSuccessful = Bank(bank).withdraw(msg.sender, amount);
+        
+        if(!isWithdrawalSuccessful){
+            throw;
+        }else{
+            if(!msg.sender.send(amount)){
+                throw;
+            }
+            
+            return true;
+        }
+    }
+    
+    // Only the owner of FundManager can call the function
+    function setBank(address newBank) returns (bool response)
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+        
+        if(newBank == 0x0)
+        {
+            throw;
+        }
+        
+        bank = newBank;
+        
+        bool result = Bank(newBank).setOwner(address(this));
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    // Only the owner of FundManager can call the function
+    function setUserPermissions(address user, uint8 permissionLevel) returns (bool response)
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+        
+        permissions[user] = permissionLevel;
+        return true;
+    }
+}

@@ -1,0 +1,6 @@
+Now our bank contract's functions can be called only by the Fund Manager. Also, we have a more sophesticated permissioning model for the fund manager (though very simple) 
+
+But there are still many problems:
+1. We do not have a system for handling multiple bank types
+2. We do not have a mechanism if we swap a bank using setBank() function. What about all the data that's in there?
+3. What if we want to update the permission model? We would have to replace the entire FundManager contract.
