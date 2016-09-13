@@ -1,0 +1,436 @@
+contract ContractNameRegistry
+{
+    address owner;
+    mapping(bytes32 => address) nameRegistry;
+    
+    // Owner is defined
+    function ContractNameRegistry()
+    {
+        owner = msg.sender;
+    }
+    
+    modifier onlyOwner()
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    // Whenever a contract is deployed, it is registered with ContractNameRegistry first
+    function addContractName(bytes32 name, address contractAddress) onlyOwner returns (bool response)
+    {
+        nameRegistry[name] = contractAddress;
+        return true;
+    }
+    
+    // On removing a contract
+    function removeContractName(bytes32 name) onlyOwner returns (bool response)
+    {
+        nameRegistry[name] = 0;
+        return true;
+    }
+    
+    // Other contracts will call this function to get addresses of needed contracts
+    function getContractAddressFromName(bytes32 name) returns (address contractAddress)
+    {
+        if(nameRegistry[name] == 0)
+        {
+            throw;
+        }
+        
+        return nameRegistry[name];
+    }
+}
+
+contract ContractNameRegistrySetter
+{
+    address contractNameRegistry;
+    
+    function ContractNameRegistrySetter(address nameRegistry)
+    {
+        contractNameRegistry = nameRegistry;
+    }
+    
+     modifier onlyRegistry()
+    {
+        if(msg.sender != contractNameRegistry)
+        {
+            throw;
+        }
+    }
+    
+    // Only contractNameRegistry can set up a new registry
+    function setContractNameRegistry(address newNameRegistry) onlyRegistry returns (bool response)
+    {
+        contractNameRegistry = newNameRegistry;
+        return true;
+    }
+}
+
+contract FundManager is ContractNameRegistrySetter
+{
+    
+    address owner;
+    bytes32 permissionControllerContractName = "PermissionController";
+    bytes32 bankControllerContractName = "BankController";
+    
+    function FundManager(address nameRegistry)
+    {
+        owner = msg.sender;
+        contractNameRegistry = nameRegistry;
+    }
+    
+    modifier onlyOwner()
+    {
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    function setPermissionLevel(address user, uint permissionLevel) onlyOwner returns (bool response)
+    {
+        address permissionController = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionControllerContractName);
+        
+        if(permissionController == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = PermissionController(permissionController).setPermissionLevel(user, permissionLevel);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    function deposit() onlyOwner returns (bool response)
+    {
+        address permissionController = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionControllerContractName);
+        
+        if(permissionController == 0x0)
+        {
+            throw;
+        }
+        
+        uint permissionLevel = PermissionController(permissionController).getPermissionLevel(msg.sender);
+        
+        uint permissionLevelForBanking = PermissionController(permissionController).getPermissionLevelForBanking();
+        
+        if(permissionLevel != permissionLevelForBanking)
+        {
+            throw;
+        }
+        
+        address bankController = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(bankControllerContractName);
+        
+        if(bankController == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = BankController(bankController).deposit.value(msg.value)(msg.sender);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    function withdraw(uint amount) onlyOwner returns (bool response)
+    {
+        address permissionController = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionControllerContractName);
+        
+        if(permissionController == 0x0)
+        {
+            throw;
+        }
+        
+        uint permissionLevel = PermissionController(permissionController).getPermissionLevel(msg.sender);
+        
+        uint permissionLevelForBanking = PermissionController(permissionController).getPermissionLevelForBanking();
+        
+        if(permissionLevel != permissionLevelForBanking)
+        {
+            throw;
+        }
+        
+        address bankController = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(bankControllerContractName);
+        
+        if(bankController == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = BankController(bankController).withdraw(msg.sender, amount);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+}
+
+contract PermissionController is ContractNameRegistrySetter
+{
+    bytes32 fundManagerContractName = "FundManager";
+    bytes32 permissionDBContractName = "PermissionDB";
+    
+    function PermissionController(address nameRegistry)
+    {
+         contractNameRegistry = nameRegistry;
+    }
+    
+    modifier onlyOwner()
+    {
+        address owner = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(fundManagerContractName);
+        
+        if(owner == 0x0)
+        {
+            throw;
+        }
+        
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    // Only fund manager can call this
+    function setPermissionLevel(address user, uint permissionLevel) onlyOwner returns (bool response)
+    {
+        address permissionDBAddress = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionDBContractName);
+        
+        if(permissionDBAddress == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = PermissionDB(permissionDBAddress).setPermissionLevel(user, permissionLevel);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    // Only fund manager can call this
+    function getPermissionLevel(address user) onlyOwner returns (uint permissionLevel)
+    {
+        address permissionDBAddress = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionDBContractName);
+        
+        if(permissionDBAddress == 0x0)
+        {
+            throw;
+        }
+        
+        uint result = PermissionDB(permissionDBAddress).getPermissionLevel(user);
+        
+        if(result == 0)
+        {
+            throw;
+        }
+        
+        return result;
+    }
+    
+     // Only fund manager can call this
+    function getPermissionLevelForBanking() onlyOwner returns (uint permissionLevel)
+    {
+        address permissionDBAddress = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionDBContractName);
+        
+        if(permissionDBAddress == 0x0)
+        {
+            throw;
+        }
+        
+        uint result = PermissionDB(permissionDBAddress).getPermissionLevelForBanking();
+        
+        if(result == 0)
+        {
+            throw;
+        }
+        
+        return result;
+    }
+}
+
+contract PermissionDB is ContractNameRegistrySetter
+{
+    mapping (address => uint) permissions;
+    bytes32 permissionControllerContractName = "PermissionController";
+    
+    function PermissionDB(address nameRegistry)
+    {
+        contractNameRegistry = nameRegistry;
+    }
+    
+    modifier onlyOwner()
+    {
+        address owner = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(permissionControllerContractName);
+        
+        if(owner == 0x0)
+        {
+            throw;
+        }
+        
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    // Only permissionController can call this
+    function setPermissionLevel(address user, uint permissionLevel) onlyOwner returns (bool response)
+    {
+        permissions[user] = permissionLevel;
+        return true;
+    }
+    
+    // Only permissionController can call this
+    function getPermissionLevel(address user) onlyOwner returns (uint permissionLevel)
+    {
+        return permissions[user];
+    }
+    
+    // Only permissionController can call this
+    function getPermissionLevelForBanking() onlyOwner returns (uint permissionLevel)
+    {
+        return 1;
+    }
+    
+}
+
+contract BankController is ContractNameRegistrySetter
+{
+    bytes32 fundManagerContractName = "FundManager";
+    bytes32 bankDBContractName = "BankDB";
+    
+    function BankController(address nameRegistry)
+    {
+        contractNameRegistry = nameRegistry;
+    }
+    
+    modifier onlyOwner()
+    {
+        address owner = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(fundManagerContractName);
+        
+        if(owner == 0x0)
+        {
+            throw;
+        }
+        
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    function deposit(address customer) onlyOwner returns (bool response)
+    {
+        address bankDBAddress = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(bankDBContractName);
+        
+        if(bankDBAddress == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = BankDB(bankDBAddress).deposit.value(msg.value)(customer);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        return true;
+    }
+    
+    function withdraw(address customer, uint amount) onlyOwner returns (bool response)
+    {
+        address bankDBAddress = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(bankDBContractName);
+        
+        if(bankDBAddress == 0x0)
+        {
+            throw;
+        }
+        
+        bool result = BankDB(bankDBAddress).withdraw(customer, amount);
+        
+        if(!result)
+        {
+            throw;
+        }
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+        
+        return true;
+    }
+}
+
+contract BankDB is ContractNameRegistrySetter
+{
+    mapping (address => uint) balances;
+    bytes32 bankControllerContractName = "BankController";
+    
+    function BankDB(address nameRegistry)
+    {
+        contractNameRegistry = nameRegistry;
+    }
+    
+    modifier onlyOwner()
+    {
+        address owner = ContractNameRegistry(contractNameRegistry).getContractAddressFromName(bankControllerContractName);
+        
+        if(owner == 0x0)
+        {
+            throw;
+        }
+        
+        if(msg.sender != owner)
+        {
+            throw;
+        }
+    }
+    
+    function deposit(address customer) onlyOwner returns (bool response)
+    {
+        balances[customer] += msg.value;
+        return true;
+    }
+    
+    function withdraw(address customer, uint amount) onlyOwner returns (bool response)
+    {
+        if(balances[customer] < amount)
+        {
+            throw;
+        }
+        
+        balances[customer] -= amount;
+        
+        if(!msg.sender.send(amount))
+        {
+            throw;
+        }
+        
+        return true;
+    }
+}
