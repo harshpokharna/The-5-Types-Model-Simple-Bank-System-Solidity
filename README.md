@@ -6,10 +6,15 @@ This repository assumes that you already have a working knowledge of writing sma
 The design used here is the 'Five Types Model' publicised by Eris Industries.
 
 Here the approach taken is completely different. Categorise the contracts into following categories:
+
 1. Database Contracts
+
 2. Controller Contracts
+
 3. Contracts Managing Contracts
+
 4. Utility Contracts
+
 5. Application Logic Contracts
 
 Here we have 2 database contracts - PermssionDB and bankDB. They allow their respective controllers to write, update and get data.
