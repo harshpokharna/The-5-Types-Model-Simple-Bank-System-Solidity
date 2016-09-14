@@ -1,23 +1,17 @@
-# SimpleBankSystemUsingSmartContracts
+# Simple Bank System Using Smart Contracts - The Five Types Model
 
-This repository assumes that you already have a working knowledge of writing smart contracts using Solidity. 
+**This repository assumes that you already have a working knowledge of writing smart contracts using Solidity.** 
 
+*The design used here is the 'Five Types Model' publicised by Eris Industries.*
 
-The design used here is the 'Five Types Model' publicised by Eris Industries.
-
-![Alt text](https://github.com/harshpokharna/The-5-Types-Model-Simple-Bank-System-Solidity/blob/master/res/application_flow.png "Optional title")
+![Alt text](https://github.com/harshpokharna/The-5-Types-Model-Simple-Bank-System-Solidity/blob/master/res/application_flow.png "Application Flow")
 
 Here the approach taken is completely different. Categorise the contracts into following categories:
-
-1. Database Contracts
-
-2. Controller Contracts
-
-3. Contracts Managing Contracts
-
-4. Utility Contracts
-
-5. Application Logic Contracts
+- Database Contracts
+- Controller Contracts
+- Contracts Managing Contracts
+- Utility Contracts
+- Application Logic Contracts
 
 Here we have 2 database contracts - PermssionDB and bankDB. They allow their respective controllers to write, update and get data.
 
