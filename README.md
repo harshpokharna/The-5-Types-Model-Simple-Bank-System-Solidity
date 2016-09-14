@@ -5,7 +5,7 @@ This repository assumes that you already have a working knowledge of writing sma
 
 The design used here is the 'Five Types Model' publicised by Eris Industries.
 
-https://github.com/harshpokharna/The-5-Types-Model-Simple-Bank-System-Solidity/blob/master/res/application_flow.png
+![Alt text](https://github.com/harshpokharna/The-5-Types-Model-Simple-Bank-System-Solidity/blob/master/res/application_flow.png "Optional title")
 
 Here the approach taken is completely different. Categorise the contracts into following categories:
 
